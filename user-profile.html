@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            padding: 20px;
+        }
+        .profile-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .house-item {
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <h2>User Profile</h2>
+        <p><strong>Name:</strong> <span id="userName"></span></p>
+        <p><strong>Email:</strong> <span id="userEmail"></span></p>
+        <h3> Your Rented Houses List </h3>
+        <div id="rentedHouses"></div>
+    </div>
+
+    <script>
+        // Fetch user profile
+        async function fetchUserProfile() {
+            const userId = JSON.parse(localStorage.getItem('nurnobi_user'))._id; // Assuming you store user data in localStorage
+
+            try {
+                const response = await fetch(`http://localhost:8000/api/v1/user/profile/${userId}`);
+                const user = await response.json();
+
+                if (response.status === 200) {
+                    document.getElementById('userName').textContent = user.name;
+                    document.getElementById('userEmail').textContent = user.email;
+
+                    const rentedHousesElement = document.getElementById('rentedHouses');
+
+                    if (user.rentedHouses.length === 0) {
+                        rentedHousesElement.innerHTML = '<p>No houses rented yet.</p>';
+                    } else {
+                        user.rentedHouses.forEach(house => {
+                            const houseItem = document.createElement('div');
+                            houseItem.classList.add('house-item');
+                            houseItem.innerHTML = `
+                                <p><strong>Address:</strong> ${house.address}</p>
+                                <p><strong>Price:</strong> $${house.price}</p>
+                                <p><strong>Bedrooms:</strong> ${house.bedrooms}</p>
+                                <p><strong>Bathrooms:</strong> ${house.bathrooms}</p>
+                                <p><strong>Size:</strong> ${house.size} sqft</p>
+                            `;
+                            rentedHousesElement.appendChild(houseItem);
+                        });
+                    }
+                } else {
+                    alert('Failed to fetch user profile: ' + user.message);
+                }
+            } catch (error) {
+                alert('An error occurred: ' + error.message);
+            }
+        }
+
+        // Fetch user profile when the page loads
+        window.onload = fetchUserProfile;
+    </script>
+</body>
+</html>

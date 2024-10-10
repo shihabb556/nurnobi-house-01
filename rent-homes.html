@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0" />
+
+    <title>Document</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+     
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            text-align: center;
+        }
+
+        .close-btn {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            float: right;
+        }
+
+        .rent-form input {
+            margin-bottom: 10px;
+            padding: 8px;
+            width: 100%;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .rent-form button {
+            background-color: #007BFF !important;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .rent-form button:hover {
+            background-color: #0056b3;
+        }
+
+        .card_rent_now{
+            margin: 12px;
+            background-color: #007BFF;
+            color: azure;
+            border-radius:7px ;
+            padding: 7px;
+        }
+        .card_rent_now:hover{
+            scale: 1.1;
+        }
+    </style>
+</head>
+<body>
+    <section class="section property" aria-labelledby="property-label">
+        <div class="container">
+            <div class="title-wrapper">
+              <h2>Available Houses For Rent</h2>
+            </div>
+            <div class="property-list" id="property-list">
+            
+
+
+            </div>
+            <div id="statusMessage"></div>
+     </div>
+ </section>
+
+    <!-- Modal for rent form -->
+    <div id="rentModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">X</button>
+            <h3>Rent House</h3>
+            <form id="rentForm" class="rent-form">
+                <input type="hidden" id="houseId">
+                <input type="hidden" id="userId" value="">
+                <label for="rentStartDate">Start Date:</label>
+                <input type="date" id="rentStartDate" required>
+                <label for="rentEndDate">End Date:</label>
+                <input type="date" id="rentEndDate" required>
+                <button type="submit">Rent Now</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+
+document.addEventListener("DOMContentLoaded", () => {
+    const propertyList = document.getElementById('property-list');
+    const statusMessage = document.getElementById('statusMessage');
+
+    // Fetch house data from your API
+    async function fetchHouses() {
+        try {
+            const response = await fetch('http://localhost:8000/api/v1/user/houses/available-houses'); // Replace with your API endpoint
+            const houses = await response.json();
+
+            if (!houses.length) {
+                statusMessage.innerText = "No house available for rent.";
+            } else {
+                renderHouses(houses);
+            }
+        } catch (error) {
+            statusMessage.innerText = "Failed to load houses. Please try again later.";
+        }
+    }
+
+    // Function to render house cards
+    function renderHouses(houses) {
+        propertyList.innerHTML = ""; // Clear the list before rendering
+        houses.forEach(house => {
+            const houseItem = document.createElement('div');
+            houseItem.classList.add('card');
+
+            houseItem.innerHTML = `
+                <div class="card-banner">
+                    <figure class="img-holder" style="--width:585; --height:390">
+                        <img src="${house.imageUrl}" class="img-cover" width="585" height="390" alt="${house.realtor}">
+                    </figure>
+                    <span class="label-medium badge">New</span>
+                    <button class="icon-btn fav-btn" aria-label="add to favorite" data-toggle-btn>
+                        <span class="material-symbols-rounded" aria-hidden="true">favorite</span>
+                    </button>
+                </div>
+                <div class="card-container">
+                    <span class="title-large">$${house.price.toFixed(2)}</span>
+                    <h3>
+                        <a href="#" class="title-small card-title">${house.realtor}</a>
+                    </h3>
+                    <address class="body-medium">${house.address}</address>
+                    <div class="card-meta-list">
+                        <div class="meta-item">
+                            <span class="material-symbols-rounded meta-icon" aria-hidden="true">bed</span>
+                            <span class="meta-text label-medium">${house.bedrooms} Bed</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="material-symbols-rounded meta-icon" aria-hidden="true">bathtub</span>
+                            <span class="meta-text label-medium">${house.bathrooms} Bath</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="material-symbols-rounded meta-icon" aria-hidden="true">straighten</span>
+                            <span class="meta-text label-medium">${house.size} sqft</span>
+                        </div>
+                    </div>
+                   <button class="card_rent_now" onclick="openRentForm('${house._id}')">Rent Now</button>
+                </div>
+            `;
+
+            propertyList.appendChild(houseItem);
+        });
+    }
+
+    // Open rent form modal - making sure this function is in the global scope
+    window.openRentForm = function (houseId) {
+        console.log('houseId', houseId);
+        const rentModal = document.getElementById('rentModal');
+        document.getElementById('houseId').value = houseId;
+        const user = JSON.parse(localStorage.getItem('nurnobi_user'));
+        document.getElementById('userId').value = user._id;
+        rentModal.style.display = 'flex';
+        console.log('user id in modal', user._id);
+    }
+
+    // Close rent form modal
+    window.closeModal = function() {
+        const rentModal = document.getElementById('rentModal');
+        rentModal.style.display = 'none';
+    }
+
+    // Handle form submission
+    document.getElementById('rentForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const houseId = document.getElementById('houseId').value;
+        const userId = document.getElementById('userId').value;
+        const rentStartDate = document.getElementById('rentStartDate').value;
+        const rentEndDate = document.getElementById('rentEndDate').value;
+
+        console.log('userid',userId)
+
+        try {
+            const response = await fetch('http://localhost:8000/api/v1/user/houses/rent-house', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ houseId, userId, rentStartDate, rentEndDate })
+            });
+
+            const data = await response.json();
+
+            if (response.status === 200) {
+                alert('House rented successfully!');
+                closeModal();
+                location.reload(); 
+                fetchHouses(); // Refresh house list
+            } else {
+                alert('Failed to rent house: ' + data.message);
+            }
+        } catch (error) {
+            alert('An error occurred: ' + error.message);
+        }
+    });
+
+    // Fetch the house data on page load
+    fetchHouses();
+});
+
+
+    </script>
+</body>
+</html>

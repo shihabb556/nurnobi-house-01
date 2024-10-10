@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add House</title>
+    <!-- <link rel="stylesheet" href="styles.css"> -->
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .house-form-container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2, h3 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .input-box {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        textarea,
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #4cae4c;
+        }
+
+        #formStatus {
+            text-align: center;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .house-list-container {
+            margin-top: 20px;
+        }
+
+        .house-item {
+            margin-bottom: 20px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .house-item img {
+            width: 150px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .house-item p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="house-form-container">
+        <h2>Add New House</h2>
+        <form id="addHouseForm" enctype="multipart/form-data">
+            <div class="input-box">
+                <label for="price">Price:</label>
+                <input type="number" id="price" name="price" placeholder="Enter price in USD" required>
+            </div>
+            <div class="input-box">
+                <label for="address">Address:</label>
+                <textarea id="address" name="address" placeholder="Enter house address" required></textarea>
+            </div>
+            <div class="input-box">
+                <label for="bedrooms">Bedrooms:</label>
+                <input type="number" id="bedrooms" name="bedrooms" placeholder="Number of bedrooms" required>
+            </div>
+            <div class="input-box">
+                <label for="bathrooms">Bathrooms:</label>
+                <input type="number" id="bathrooms" name="bathrooms" placeholder="Number of bathrooms" required>
+            </div>
+            <div class="input-box">
+                <label for="size">Size (sqft):</label>
+                <input type="number" id="size" name="size" placeholder="Enter house size in square feet" required>
+            </div>
+            <div class="input-box">
+                <label for="realtor">Realtor Name:</label>
+                <input type="text" id="realtor" name="realtor" placeholder="Enter realtor's name" required>
+            </div>
+            <div class="input-box">
+                <label for="image">House Image:</label>
+                <input type="file" id="image" name="image" accept="image/*" required>
+            </div>
+            <button type="submit">Add House</button>
+        </form>
+        <p id="formStatus"></p>
+
+        <div class="house-list-container">
+            <h3>Added Houses</h3>
+            <ul id="houseList"></ul> <!-- This is where houses will be added dynamically -->
+        </div>
+    </div>
+
+    <script>
+        // Handle form submission and adding house details
+        document.getElementById('addHouseForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const price = document.getElementById('price').value;
+            const address = document.getElementById('address').value;
+            const bedrooms = document.getElementById('bedrooms').value;
+            const bathrooms = document.getElementById('bathrooms').value;
+            const size = document.getElementById('size').value;
+            const realtor = document.getElementById('realtor').value;
+            const imageFile = document.getElementById('image').files[0];
+            const formStatus = document.getElementById('formStatus');
+
+            const formData = new FormData();
+            formData.append('price', price);
+            formData.append('address', address);
+            formData.append('bedrooms', bedrooms);
+            formData.append('bathrooms', bathrooms);
+            formData.append('size', size);
+            formData.append('realtor', realtor);
+            formData.append('file', imageFile);
+
+            try {
+                const response = await fetch('http://localhost:8000/api/v1/user/houses/add-house', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+                if (response.status === 201) {
+                    formStatus.textContent = 'House added successfully!';
+                    formStatus.style.color = 'green';
+
+                    // Reset form fields
+                    document.getElementById('addHouseForm').reset();
+
+                    // Add the new house to the house listings
+                    const newHouse = {
+                        price: parseFloat(price),
+                        address: address,
+                        bedrooms: parseInt(bedrooms),
+                        bathrooms: parseInt(bathrooms),
+                        size: parseInt(size),
+                        realtor: realtor,
+                        imageUrl: data.imageUrl, // Assuming your backend returns the image URL
+                        _id: data.houseId // Assuming your backend returns the new house ID
+                    };
+                    addHouseToList(newHouse);
+                } else {
+                    formStatus.textContent = 'Failed to add house: ' + data.message;
+                    formStatus.style.color = 'red';
+                }
+            } catch (error) {
+                formStatus.textContent = 'An error occurred: ' + error.message;
+                formStatus.style.color = 'red';
+            }
+        });
+
+        // Function to dynamically add a new house to the house list
+        function addHouseToList(house) {
+            const houseList = document.getElementById('houseList');
+
+            // Create a new list item for the added house
+            const listItem = document.createElement('li');
+            listItem.className = 'house-item';
+            
+            // Add content for the house details
+            listItem.innerHTML = `
+                <img src="${house?.imageUrl}" alt="House Image" />
+                <p><strong>Price:</strong> $${house.price}</p>
+                <p><strong>Address:</strong> ${house.address}</p>
+                <p><strong>Bedrooms:</strong> ${house.bedrooms}</p>
+                <p><strong>Bathrooms:</strong> ${house.bathrooms}</p>
+                <p><strong>Size:</strong> ${house.size} sqft</p>
+                <p><strong>Realtor:</strong> ${house.realtor}</p>
+            `;
+
+            // Append the new house item to the house list
+            houseList.appendChild(listItem);
+        }
+    </script>
+</body>
+</html>

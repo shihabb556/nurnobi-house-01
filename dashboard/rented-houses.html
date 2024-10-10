@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rented Houses</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            padding: 20px;
+        }
+
+        .rented-house-list-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .rented-house-item {
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .rented-house-item h3 {
+            margin-top: 0;
+        }
+
+        .house-image {
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .user-details,
+        .rent-details {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+        }
+
+        .user-details h4,
+        .rent-details h4 {
+            margin: 0 0 5px;
+        }
+
+        .user-details p,
+        .rent-details p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="rented-house-list-container">
+        <h2>Rented Houses</h2>
+        <div id="rentedHouseList"></div>
+        <p id="statusMessage"></p>
+    </div>
+
+    <script>
+        async function fetchRentedHouses() {
+            const rentedHouseListElement = document.getElementById('rentedHouseList');
+            const statusMessage = document.getElementById('statusMessage');
+
+            try {
+                const response = await fetch('http://localhost:8000/api/v1/user/houses/rented-houses');
+                const rentedHouses = await response.json();
+
+                if (response.status === 200) {
+                    if (rentedHouses.length === 0) {
+                        statusMessage.textContent = 'No houses have been rented yet.';
+                    } else {
+                        rentedHouseListElement.innerHTML = ''; // Clear the list before appending
+                        rentedHouses.forEach(rentedHouse => {
+                            const rentedHouseItem = document.createElement('div');
+                            rentedHouseItem.classList.add('rented-house-item');
+
+                            rentedHouseItem.innerHTML = `
+                                <img class="house-image" src="${rentedHouse.house.imageUrl}" alt="House Image">
+                                <h3>Price: $${rentedHouse.house.price.toFixed(2)}</h3>
+                                <p><strong>Address:</strong> ${rentedHouse.house.address}</p>
+                                <p><strong>Bedrooms:</strong> ${rentedHouse.house.bedrooms}</p>
+                                <p><strong>Bathrooms:</strong> ${rentedHouse.house.bathrooms}</p>
+                                <p><strong>Size:</strong> ${rentedHouse.house.size} sqft</p>
+                                <p><strong>Realtor:</strong> ${rentedHouse.house.realtor}</p>
+
+                                <div class="user-details">
+                                    <h4>User Details</h4>
+                                    <p><strong>Name:</strong> ${rentedHouse.user.name}</p>
+                                    <p><strong>Email:</strong> ${rentedHouse.user.email}</p>
+                                </div>
+
+                                <div class="rent-details">
+                                    <h4>Rent Details</h4>
+                                    <p><strong>Start Date:</strong> ${new Date(rentedHouse.rentStartDate).toLocaleDateString()}</p>
+                                    <p><strong>End Date:</strong> ${new Date(rentedHouse.rentEndDate).toLocaleDateString()}</p>
+                                </div>
+                            `;
+
+                            rentedHouseListElement.appendChild(rentedHouseItem);
+                        });
+                    }
+                } else {
+                    statusMessage.textContent = 'Failed to retrieve rented houses: ' + rentedHouses.message;
+                }
+            } catch (error) {
+                statusMessage.textContent = 'An error occurred: ' + error.message;
+            }
+        }
+
+        // Fetch the rented houses when the page loads
+        window.onload = fetchRentedHouses;
+    </script>
+</body>
+
+</html>

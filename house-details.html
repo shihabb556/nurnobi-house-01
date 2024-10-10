@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Details</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            padding: 20px;
+        }
+
+        .house-detail-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .house-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        #statusMessage {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="house-detail-container">
+        <h2>House Details</h2>
+        <img id="houseImage" class="house-image" src="" alt="House Image" />
+        <div id="houseDetails"></div>
+        <p id="statusMessage"></p>
+    </div>
+
+    <script>
+        async function fetchHouseById() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const houseId = urlParams.get('id'); // Get the house ID from the URL
+            const houseDetailsElement = document.getElementById('houseDetails');
+            const houseImageElement = document.getElementById('houseImage');
+            const statusMessage = document.getElementById('statusMessage');
+
+            try {
+                const response = await fetch(`http://localhost:8000/api/v1/user/houses/get-house/${houseId}`);
+                const house = await response.json();
+
+                if (response.status === 200) {
+                    // Display house image and details
+                    houseImageElement.src = house.imageUrl; // Assuming house.imageUrl contains the image URL
+                    houseDetailsElement.innerHTML = `
+                        <h3>Price: $${house.price.toFixed(2)}</h3>
+                        <p><strong>Address:</strong> ${house.address}</p>
+                        <p><strong>Bedrooms:</strong> ${house.bedrooms}</p>
+                        <p><strong>Bathrooms:</strong> ${house.bathrooms}</p>
+                        <p><strong>Size:</strong> ${house.size} sqft</p>
+                        <p><strong>Realtor:</strong> ${house.realtor}</p>
+                    `;
+                } else {
+                    statusMessage.textContent = 'Failed to retrieve house: ' + house.message;
+                }
+            } catch (error) {
+                statusMessage.textContent = 'An error occurred: ' + error.message;
+            }
+        }
+
+        // Fetch the house details when the page loads
+        window.onload = fetchHouseById;
+    </script>
+
+</body>
+</html>
